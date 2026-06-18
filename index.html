@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Baseball Hit Challenge</title>
+
+<style>
+
+body{
+    margin:0;
+    background:#111;
+    color:white;
+    text-align:center;
+    font-family:'Malgun Gothic',sans-serif;
+}
+
+
+h1{
+    color:#ffd700;
+}
+
+
+.game{
+    width:95%;
+    max-width:430px;
+    margin:auto;
+}
+
+
+
+.field{
+
+position:relative;
+height:620px;
+
+overflow:hidden;
+
+background:url("ground.png") center/cover;
+
+border-radius:20px;
+
+}
+
+
+
+/* 타격존 */
+
+.zone{
+
+position:absolute;
+
+width:180px;
+height:240px;
+
+left:50%;
+top:130px;
+
+transform:translateX(-50%);
+
+border:3px solid white;
+
+box-shadow:0 0 20px #00ffff;
+
+}
+
+
+/* 십자가 */
+
+.cross-x{
+
+position:absolute;
+
+width:100%;
+height:4px;
+
+top:50%;
+
+background:#ff4757;
+
+}
+
+
+.cross-y{
+
+position:absolute;
+
+height:100%;
+width:4px;
+
+left:50%;
+
+background:#00d2d3;
+
+}
+
+
+
+/* 퍼펙트 영역 */
+
+.center{
+
+position:absolute;
+
+width:45px;
+height:45px;
+
+left:50%;
+top:50%;
+
+transform:translate(-50%,-50%);
+
+border:3px solid #ffd700;
+
+box-shadow:0 0 20px #ffd700;
+
+}
+
+
+
+/* 게이지 */
+
+.v-gauge{
+
+position:absolute;
+
+left:20px;
+top:150px;
+
+height:240px;
+width:14px;
+
+background:#333;
+
+border-radius:10px;
+
+}
+
+
+.v-bar{
+
+position:absolute;
+
+width:14px;
+height:25px;
+
+background:red;
+
+border-radius:10px;
+
+}
+
+
+
+
+.h-gauge{
+
+position:absolute;
+
+bottom:90px;
+left:90px;
+
+width:220px;
+height:14px;
+
+background:#333;
+
+border-radius:10px;
+
+}
+
+
+.h-bar{
+
+position:absolute;
+
+width:25px;
+height:14px;
+
+background:#00ffff;
+
+border-radius:10px;
+
+}
+
+
+
+
+.ball{
+
+position:absolute;
+
+width:50px;
+
+left:50%;
+
+top:520px;
+
+transform:translateX(-50%);
+
+}
+
+
+.player{
+
+position:absolute;
+
+right:10px;
+
+bottom:20px;
+
+width:150px;
+
+}
+
+
+
+.result{
+
+height:60px;
+
+font-size:28px;
+
+color:#ffd700;
+
+}
+
+
+
+button{
+
+padding:15px 25px;
+
+margin:8px;
+
+font-size:18px;
+
+border:0;
+
+border-radius:15px;
+
+background:#e43f5a;
+
+color:white;
+
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+
+<h1>⚾ Baseball Hit Challenge</h1>
+
+
+<div class="game">
+
+
+<div class="field">
+
+
+<div class="zone">
+
+
+<div class="cross-x"></div>
+
+<div class="cross-y"></div>
+
+<div class="center"></div>
+
+
+</div>
+
+
+
+<div class="v-gauge">
+
+<div id="vbar" class="v-bar"></div>
+
+</div>
+
+
+
+<div class="h-gauge">
+
+<div id="hbar" class="h-bar"></div>
+
+</div>
+
+
+
+<img id="ball"
+class="ball"
+src="ball.png">
+
+
+<img class="player"
+src="player.png">
+
+
+<img id="home"
+src="homerun.png"
+style="
+display:none;
+position:absolute;
+width:250px;
+left:50%;
+top:220px;
+transform:translateX(-50%);
+">
+
+
+</div>
+
+
+
+<div id="result" class="result">
+준비
+</div>
+
+
+
+<button onclick="start()">
+시작
+</button>
+
+
+<button onclick="action()">
+스페이스 / 타격
+</button>
+
+
+</div>
+
+
+
+<script>
+
+
+let state="ready";
+
+
+let v=0;
+let h=0;
+
+let vd=3;
+let hd=3;
+
+
+let vi;
+let hi;
+
+
+
+let ball=document.getElementById("ball");
+
+
+
+document.addEventListener("keydown",e=>{
+
+if(e.code==="Space")
+action();
+
+});
+
+
+
+
+
+function start(){
+
+
+state="vertical";
+
+
+document.getElementById("result").innerText=
+"상하 위치 선택";
+
+
+v=0;
+
+
+clearInterval(vi);
+
+
+vi=setInterval(()=>{
+
+
+v+=vd;
+
+
+if(v>215||v<0)
+vd*=-1;
+
+
+document.getElementById("vbar")
+.style.top=v+"px";
+
+
+},15);
+
+
+
+ball.style.top="520px";
+
+
+
+}
+
+
+
+
+
+function action(){
+
+
+
+if(state==="vertical"){
+
+
+clearInterval(vi);
+
+
+state="horizontal";
+
+
+document.getElementById("result").innerText=
+"좌우 위치 선택";
+
+
+h=0;
+
+
+clearInterval(hi);
+
+
+hi=setInterval(()=>{
+
+
+h+=hd;
+
+
+if(h>195||h<0)
+hd*=-1;
+
+
+document.getElementById("hbar")
+.style.left=h+"px";
+
+
+},15);
+
+
+
+}
+
+
+else if(state==="horizontal"){
+
+
+
+clearInterval(hi);
+
+
+judge();
+
+
+state="end";
+
+
+}
+
+
+
+}
+
+
+
+
+function judge(){
+
+
+
+let vx=Math.abs(v-107);
+
+let hx=Math.abs(h-97);
+
+
+
+let error=Math.sqrt(
+vx*vx+hx*hx
+);
+
+
+
+let text;
+
+
+
+if(error<25){
+
+text="🔥 HOME RUN";
+
+document.getElementById("home")
+.style.display="block";
+
+
+}
+
+else if(error<60){
+
+text="💥 3루타";
+
+}
+
+else if(error<100){
+
+text="⚾ 2루타";
+
+}
+
+else{
+
+text="❌ 헛스윙";
+
+}
+
+
+
+document.getElementById("result")
+.innerText=text;
+
+
+
+}
+
+
+
+
+
+</script>
+
+
+</body>
+</html>
