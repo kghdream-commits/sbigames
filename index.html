@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Run Kick Challenge</title>
+
+<style>
+body{
+    text-align:center;
+    font-family:Arial;
+    background:#f3f6fa;
+}
+
+.box{
+    width:420px;
+    margin:auto;
+    background:white;
+    padding:30px;
+    border-radius:20px;
+}
+
+button{
+    padding:12px 25px;
+    border:none;
+    border-radius:10px;
+    cursor:pointer;
+}
+
+input{
+    width:220px;
+}
+
+#target{
+    font-size:90px;
+    margin:30px;
+    transition:0.3s;
+}
+
+#ball{
+    font-size:50px;
+    margin:20px;
+}
+
+.record{
+    background:#eee;
+    padding:15px;
+    margin-top:30px;
+}
+
+/* 애니메이션 */
+.perfect{ animation:perfect 1s; }
+.great{ animation:great 1s; }
+.good{ animation:good 1s; }
+.normal{ animation:normal 1s; }
+.miss{ animation:miss 1s; }
+
+@keyframes perfect{
+    100%{ transform:translateY(-200px) scale(0.5); }
+}
+@keyframes great{
+    100%{ transform:translate(100px,-150px); }
+}
+@keyframes good{
+    100%{ transform:translate(150px,-80px); }
+}
+@keyframes normal{
+    100%{ transform:translate(180px,20px); }
+}
+@keyframes miss{
+    100%{ transform:translate(250px,100px) rotate(180deg); }
+}
+</style>
+
+</head>
+
+<body>
+
+<h1>🏃⚽ Run Kick Challenge</h1>
+
+<div class="box">
+
+<h3 id="level">난이도 : EASY</h3>
+
+<h3>러닝 거리 입력</h3>
+
+<input id="km" type="number" placeholder="km 입력">
+<button onclick="getTicket()">슈팅권 받기</button>
+
+<p id="ticket">보유권 : 0</p>
+
+<hr>
+
+<h3>⚽ 슈팅</h3>
+
+상하<br>
+<input id="power" type="range" min="0" max="100" value="50">
+
+<br><br>
+
+좌우<br>
+<input id="direction" type="range" min="0" max="100" value="50">
+
+<div id="target">🎯</div>
+
+<div id="ball">⚽</div>
+
+<button onclick="kick()">슛!</button>
+
+<h2 id="result"></h2>
+
+<div class="record">
+<p>오늘 BEST : <span id="today">0</span>m</p>
+<p>월간 BEST : <span id="month">0</span>m</p>
+<p>누적 거리 : <span id="daily">0</span>m</p>
+</div>
+
+</div>
+
+<script>
+let ticket = 0;
+
+let todayBest = Number(localStorage.getItem("today")) || 0;
+let monthBest = Number(localStorage.getItem("month")) || 0;
+let dailyDistance = Number(localStorage.getItem("dailyDistance")) || 0;
+
+document.getElementById("today").innerText = todayBest;
+document.getElementById("month").innerText = monthBest;
+document.getElementById("daily").innerText = dailyDistance;
+
+function getTicket(){
+    let km = Number(document.getElementById("km").value);
+
+    if(km < 1){
+        alert("1km 이상 입력");
+        return;
+    }
+
+    ticket++;
+
+    if(km >= 10) alert("🥇 골든 슈팅권");
+    else if(km >= 5) alert("🥈 실버 슈팅권");
+    else alert("🥉 일반 슈팅권");
+
+    document.getElementById("ticket").innerText = "보유권 : " + ticket;
+}
+
+function kick(){
+    if(ticket <= 0){
+        alert("슈팅권 없음");
+        return;
+    }
+
+    ticket--;
+
+    let perfectLimit = 90;
+    let targetScale = 1;
+
+    if(dailyDistance > 1500){
+        perfectLimit = 96;
+        targetScale = 0.6;
+        document.getElementById("level").innerText = "난이도 : HARD";
+    }
+    else if(dailyDistance > 500){
+        perfectLimit = 93;
+        targetScale = 0.8;
+        document.getElementById("level").innerText = "난이도 : NORMAL";
+    }
+    else{
+        document.getElementById("level").innerText = "난이도 : EASY";
+    }
+
+    document.getElementById("target").style.transform = "scale(" + targetScale + ")";
+
+    let power = Number(document.getElementById("power").value);
+    let direction = Number(document.getElementById("direction").value);
+
+    let accuracy =
+        (100 - Math.abs(50 - power) +
+         100 - Math.abs(50 - direction)) / 2;
+
+    let result;
+    let distance;
+
+    if(accuracy >= perfectLimit){
+        result = "🎯 PERFECT";
+        distance = 300;
+    }
+    else if(accuracy >= 75){
+        result = "🟠 GREAT";
+        distance = 230;
+    }
+    else if(accuracy >= 55){
+        result = "🟡 GOOD";
+        distance = 170;
+    }
+    else if(accuracy >= 30){
+        result = "⚪ NORMAL";
+        distance = 80;
+    }
+    else{
+        result = "❌ MISS";
+        distance = 0;
+    }
+
+    distance = Math.round(distance * (accuracy / 100));
+
+    document.getElementById("result").innerHTML =
+        result + "<br>" + distance + "m";
+
+    let ball = document.getElementById("ball");
+    ball.className = "";
+    void ball.offsetWidth;
+
+    if(result.includes("PERFECT")) ball.classList.add("perfect");
+    else if(result.includes("GREAT")) ball.classList.add("great");
+    else if(result.includes("GOOD")) ball.classList.add("good");
+    else if(result.includes("NORMAL")) ball.classList.add("normal");
+    else ball.classList.add("miss");
+
+    save(distance);
+
+    document.getElementById("ticket").innerText = "보유권 : " + ticket;
+}
+
+function save(distance){
+
+    if(distance > todayBest){
+        todayBest = distance;
+        localStorage.setItem("today", todayBest);
+    }
+
+    if(distance > monthBest){
+        monthBest = distance;
+        localStorage.setItem("month", monthBest);
+    }
+
+    dailyDistance += distance;
+    localStorage.setItem("dailyDistance", dailyDistance);
+
+    document.getElementById("today").innerText = todayBest;
+    document.getElementById("month").innerText = monthBest;
+    document.getElementById("daily").innerText = dailyDistance;
+}
+</script>
+
+</body>
+</html>
