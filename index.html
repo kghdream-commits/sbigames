@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Baseball Hit Challenge</title>
+
+<style>
+
+*{box-sizing:border-box;}
+
+html, body{
+margin:0;
+height:100%;
+}
+
+body{
+background:#111827;
+color:white;
+font-family:'Malgun Gothic',sans-serif;
+text-align:center;
+overflow-y:auto;
+}
+
+h1{
+color:#ffd700;
+text-shadow:0 0 15px #ffd700;
+margin:10px 0;
+}
+
+.game{
+width:95%;
+max-width:430px;
+margin:auto;
+}
+
+.field{
+position:relative;
+height:420px;
+border-radius:25px;
+overflow:hidden;
+background:url("ground.png") center/cover;
+}
+
+/* pitch */
+.pitch{
+position:absolute;
+top:15px;
+left:50%;
+transform:translateX(-50%);
+font-size:18px;
+font-weight:bold;
+z-index:10;
+}
+
+/* zone */
+.zone{
+position:absolute;
+width:170px;
+height:200px;
+left:50%;
+top:110px;
+transform:translateX(-50%);
+border:3px solid white;
+box-shadow:0 0 20px #00ffff;
+}
+
+.cross-x,.cross-y{
+position:absolute;
+background:#ffd700;
+}
+
+.cross-x{width:100%;height:3px;top:50%;}
+.cross-y{height:100%;width:3px;left:50%;}
+
+/* center */
+.center{
+position:absolute;
+width:28px;
+height:28px;
+left:50%;
+top:50%;
+transform:translate(-50%,-50%);
+border-radius:8px;
+background:rgba(255,215,0,.25);
+border:3px solid #ffd700;
+z-index:30;
+}
+
+/* gauges */
+.v-gauge,.h-gauge{
+position:absolute;
+display:none;
+z-index:5;
+}
+
+.v-gauge{
+left:50%;
+top:0;
+transform:translateX(-50%);
+width:22px;
+height:100%;
+background:#ff4757;
+}
+
+.h-gauge{
+left:0;
+top:50%;
+transform:translateY(-50%);
+width:100%;
+height:22px;
+background:#00d2d3;
+}
+
+.v-bar,.h-bar{
+position:absolute;
+width:18px;
+height:18px;
+background:white;
+border-radius:6px;
+}
+
+.v-bar{
+left:50%;
+transform:translateX(-50%);
+}
+
+.h-bar{
+top:50%;
+transform:translateY(-50%);
+}
+
+/* player */
+.player{
+position:absolute;
+right:8px;
+bottom:8px;
+width:95px;
+z-index:10;
+}
+
+/* HOME RUN */
+.home{
+position:absolute;
+display:none;
+width:220px;
+left:50%;
+top:140px;
+transform:translateX(-50%);
+z-index:50;
+filter:drop-shadow(0 0 20px #ffd700);
+animation:boom .4s ease-out;
+}
+
+@keyframes boom{
+0%{transform:translate(-50%,0) scale(0.3);opacity:0;}
+60%{transform:translate(-50%,0) scale(1.2);opacity:1;}
+100%{transform:translate(-50%,0) scale(1);opacity:1;}
+}
+
+/* shake */
+.shake{
+animation:shake .25s;
+}
+
+@keyframes shake{
+0%{transform:translate(0);}
+25%{transform:translate(8px,-6px);}
+50%{transform:translate(-8px,6px);}
+75%{transform:translate(6px,3px);}
+100%{transform:translate(0);}
+}
+
+/* 2X EFFECT */
+#bonusFx{
+position:absolute;
+top:40%;
+left:50%;
+transform:translate(-50%,-50%);
+font-size:28px;
+font-weight:bold;
+color:#00d2ff;
+text-shadow:0 0 20px #00d2ff;
+display:none;
+z-index:100;
+}
+
+@keyframes pop2x {
+0% {transform:translate(-50%,-50%) scale(0.3); opacity:0;}
+50% {transform:translate(-50%,-50%) scale(1.3); opacity:1;}
+100% {transform:translate(-50%,-50%) scale(1); opacity:0;}
+}
+
+/* UI */
+.result{
+height:40px;
+font-size:20px;
+color:#ffd700;
+margin-top:8px;
+}
+
+.combo{
+font-size:16px;
+color:#ff4757;
+}
+
+.record{
+background:#1f2937;
+border-radius:15px;
+padding:8px;
+font-size:14px;
+margin-top:5px;
+}
+
+/* button */
+button{
+position:absolute;
+bottom:10px;
+left:50%;
+transform:translateX(-50%);
+width:90%;
+padding:14px;
+border:0;
+border-radius:15px;
+font-size:18px;
+background:#e43f5a;
+color:white;
+z-index:20;
+}
+
+</style>
+</head>
+
+<body>
+
+<h1>⚾ Baseball Hit</h1>
+
+<div class="game">
+
+<div id="field" class="field">
+
+<div id="pitch" class="pitch">준비</div>
+
+<div class="zone">
+<div class="cross-x"></div>
+<div class="cross-y"></div>
+<div class="center"></div>
+
+<div id="vg" class="v-gauge">
+<div id="vbar" class="v-bar"></div>
+</div>
+
+<div id="hg" class="h-gauge">
+<div id="hbar" class="h-bar"></div>
+</div>
+</div>
+
+<img class="player" src="player.png">
+<img id="home" class="home" src="homerun.png">
+
+<div id="bonusFx">💨 2X BONUS!</div>
+
+<button onclick="action()" id="btn">START</button>
+
+</div>
+
+<div id="result" class="result">준비</div>
+<div id="combo" class="combo">COMBO 0</div>
+
+<div class="record">
+<p>최고 : <span id="best">0</span>m</p>
+<p>홈런 : <span id="hr">0</span></p>
+</div>
+
+</div>
+
+<script>
+
+let state="ready";
+
+let v=0,h=0;
+let vd=3,hd=3;
+
+let vi,hi;
+
+let combo=0;
+let best=Number(localStorage.getItem("best"))||0;
+let homerun=Number(localStorage.getItem("hr"))||0;
+
+let difficulty=1;
+let pitchCount=0;
+let isFastball=false;
+
+const MAX_V=180;
+const MAX_H=120;
+
+document.getElementById("best").innerText=best;
+document.getElementById("hr").innerText=homerun;
+
+function action(){
+
+if(state==="ready"||state==="end"){
+start();
+return;
+}
+
+if(state==="vertical"){
+clearInterval(vi);
+state="horizontal";
+
+document.getElementById("hg").style.display="block";
+
+hd=3+difficulty;
+
+hi=setInterval(()=>{
+
+h+=hd;
+if(h>=MAX_H||h<=0) hd*=-1;
+
+document.getElementById("hbar").style.left=h+"px";
+
+},15);
+
+return;
+}
+
+if(state==="horizontal"){
+clearInterval(hi);
+judge();
+state="end";
+document.getElementById("btn").innerText="RETRY";
+}
+
+}
+
+function start(){
+
+state="vertical";
+
+v=0; h=0;
+
+pitchCount++;
+
+let pitchList=["⚾ 직구","🌀 변화구","🔥 커브"];
+
+isFastball = (pitchCount % 5 === 0 || pitchCount % 10 === 0);
+
+if(isFastball){
+document.getElementById("pitch").innerText="💨 강속구!! (2X)";
+vd = 6 + difficulty;
+}else{
+document.getElementById("pitch").innerText =
+pitchList[Math.floor(Math.random()*pitchList.length)];
+vd = 3 + difficulty;
+}
+
+document.getElementById("btn").innerText="SWING";
+
+document.getElementById("vg").style.display="block";
+document.getElementById("hg").style.display="none";
+
+clearInterval(vi);
+clearInterval(hi);
+
+vi=setInterval(()=>{
+
+v+=vd;
+if(v>=MAX_V||v<=0) vd*=-1;
+
+document.getElementById("vbar").style.top=v+"px";
+
+},15);
+
+}
+
+function judge(){
+
+let centerV=90;
+let centerH=60;
+
+let error=Math.sqrt(
+Math.pow(v-centerV,2)+
+Math.pow(h-centerH,2)
+);
+
+let result="";
+let distance=0;
+
+if(error < 18){
+result="🔥 HOME RUN";
+distance=320;
+combo++;
+homerun++;
+homeEffect();
+}
+else if(error < 40){
+result="💥 3루타";
+distance=220;
+combo++;
+}
+else if(error < 70){
+result="⚾ 2루타";
+distance=150;
+combo++;
+}
+else if(error < 95){
+result="🥎 안타";
+distance=80;
+combo=0;
+}
+else{
+result="❌ 헛스윙";
+distance=0;
+combo=0;
+}
+
+/* 콤보 보정 */
+let bonus = 1 + Math.min(combo * 0.03, 0.3);
+
+/* 강속구 2배 이펙트 */
+if(isFastball){
+bonus *= 2;
+
+let fx=document.getElementById("bonusFx");
+fx.style.display="block";
+fx.style.animation="pop2x 0.6s ease-out";
+
+setTimeout(()=>{
+fx.style.display="none";
+},600);
+}
+
+distance = Math.round(distance * bonus);
+
+document.getElementById("result").innerText =
+result+" + "+distance+"m";
+
+document.getElementById("combo").innerText =
+"🔥 COMBO "+combo;
+
+if(distance>best){
+best=distance;
+localStorage.setItem("best",best);
+}
+
+localStorage.setItem("hr",homerun);
+
+document.getElementById("best").innerText=best;
+document.getElementById("hr").innerText=homerun;
+
+}
+
+function homeEffect(){
+
+let f=document.getElementById("field");
+
+f.classList.remove("shake");
+void f.offsetWidth;
+f.classList.add("shake");
+
+let h=document.getElementById("home");
+h.style.display="block";
+
+document.body.style.filter="brightness(2)";
+setTimeout(()=>{
+document.body.style.filter="brightness(1)";
+},150);
+
+}
+
+</script>
+
+</body>
+</html>
