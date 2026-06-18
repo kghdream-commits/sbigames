@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Baseball Hit Challenge</title>
+
+<style>
+body{
+    margin:0;
+    background:#0b1d2a;
+    color:white;
+    font-family:Malgun Gothic,sans-serif;
+    text-align:center;
+}
+
+h1{
+    color:#ffd700;
+}
+
+.game{
+    width:95%;
+    max-width:420px;
+    margin:auto;
+    background:#123;
+    border-radius:20px;
+    padding:15px;
+}
+
+
+/* 야구장 */
+.field{
+    position:relative;
+    height:420px;
+    overflow:hidden;
+    border-radius:20px;
+    background:
+    linear-gradient(#18344d,#235c35);
+    border:3px solid #456;
+}
+
+
+/* 타격존 */
+.zone{
+
+    position:absolute;
+    width:170px;
+    height:220px;
+    left:50%;
+    top:80px;
+
+    transform:translateX(-50%);
+
+    border:3px solid white;
+    box-shadow:0 0 20px #00ffff;
+
+}
+
+
+/* 십자가 */
+
+.cross-x{
+    position:absolute;
+    width:170px;
+    height:3px;
+    background:#ff4757;
+    top:50%;
+}
+
+
+.cross-y{
+    position:absolute;
+    height:220px;
+    width:3px;
+    background:#00d2d3;
+    left:50%;
+}
+
+
+
+/* 공 */
+
+.ball{
+
+    position:absolute;
+    font-size:45px;
+    left:50%;
+    top:420px;
+
+    transform:translateX(-50%);
+
+}
+
+
+
+/* 배트 */
+
+.bat{
+
+position:absolute;
+right:30px;
+bottom:40px;
+font-size:70px;
+
+}
+
+
+
+/* 버튼 */
+
+button{
+
+padding:15px;
+margin:10px;
+
+border:0;
+border-radius:12px;
+
+background:#e43f5a;
+color:white;
+font-size:18px;
+font-weight:bold;
+
+}
+
+
+
+.result{
+
+font-size:28px;
+height:50px;
+color:#ffd700;
+
+}
+
+
+.info{
+
+background:#1d3557;
+padding:10px;
+border-radius:10px;
+
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+
+<h1>⚾ Baseball Hit Challenge</h1>
+
+
+<div class="game">
+
+
+<div class="info">
+
+거리 입력 대신 타격권 테스트
+
+</div>
+
+
+<div class="field">
+
+
+<div class="zone">
+
+<div class="cross-x"></div>
+<div class="cross-y"></div>
+
+</div>
+
+
+
+<div id="ball" class="ball">
+⚾
+</div>
+
+
+<div class="bat">
+🏏
+</div>
+
+
+</div>
+
+
+<div class="result" id="result">
+준비
+</div>
+
+
+<button onclick="startGame()">
+타격 시작
+</button>
+
+
+<button onclick="hit()">
+스윙 (스페이스)
+</button>
+
+
+<div class="info">
+
+오늘 최고 :
+<span id="best">0</span> m
+
+</div>
+
+
+</div>
+
+
+
+<script>
+
+
+let ball;
+let timer;
+
+let playing=false;
+
+let best =
+Number(localStorage.getItem("best")) || 0;
+
+
+document.getElementById("best").innerText=best;
+
+
+
+let ballX=50;
+let ballY=100;
+
+
+
+window.onload=function(){
+
+document.addEventListener("keydown",e=>{
+
+if(e.code==="Space"){
+hit();
+}
+
+});
+
+
+}
+
+
+
+function startGame(){
+
+
+if(playing)return;
+
+
+playing=true;
+
+
+ball=document.getElementById("ball");
+
+
+ballY=430;
+
+
+ballX=Math.random()*60+20;
+
+
+
+ball.style.left=ballX+"%";
+ball.style.top=ballY+"px";
+
+
+
+timer=setInterval(()=>{
+
+
+ballY-=5;
+
+
+ball.style.top=ballY+"px";
+
+
+
+if(ballY<80){
+
+clearInterval(timer);
+playing=false;
+
+document.getElementById("result").innerText=
+"⚾ 타이밍 실패";
+
+}
+
+
+
+},20);
+
+
+
+}
+
+
+
+function hit(){
+
+
+if(!playing)return;
+
+
+
+clearInterval(timer);
+playing=false;
+
+
+
+let zoneX=50;
+let zoneY=190;
+
+
+
+let hitX=ballX;
+let hitY=ballY;
+
+
+
+let error=Math.sqrt(
+
+Math.pow((hitX-zoneX)*2,2)+
+
+Math.pow((hitY-zoneY),2)
+
+);
+
+
+
+let text;
+let dist;
+
+
+
+if(error<25){
+
+text="🔥 HOME RUN";
+dist=120;
+
+}
+
+else if(error<55){
+
+text="💥 3루타";
+dist=80;
+
+}
+
+else if(error<90){
+
+text="⚾ 2루타";
+dist=50;
+
+}
+
+else{
+
+text="❌ 헛스윙";
+dist=0;
+
+}
+
+
+
+document.getElementById("result").innerText=
+text+" "+dist+"m";
+
+
+
+if(dist>best){
+
+best=dist;
+
+localStorage.setItem("best",best);
+
+document.getElementById("best").innerText=best;
+
+}
+
+
+
+}
+
+
+</script>
+
+
+</body>
+</html>
