@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Run Kick Challenge</title>
+
+<style>
+body{
+    text-align:center;
+    font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
+    background:#1a1a2e;
+    color: #fff;
+    margin: 0;
+    padding: 20px;
+}
+
+h1 {
+    color: #e43f5a;
+}
+
+.box{
+    width:90%;
+    max-width:420px;
+    margin:auto;
+    background:#162447;
+    padding:20px;
+    border-radius:20px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    border: 1px solid #0f4c75;
+}
+
+button{
+    padding:12px 25px;
+    border:none;
+    border-radius:10px;
+    cursor:pointer;
+    background: #e43f5a;
+    color: white;
+    font-weight: bold;
+    font-size: 1rem;
+}
+
+button:active {
+    background: #b22c44;
+}
+
+button:disabled {
+    background: #555;
+    cursor: not-allowed;
+}
+
+input[type="number"]{
+    width:60%;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #0f4c75;
+    background: #1a1a2e;
+    color: white;
+    font-size: 1rem;
+    text-align: center;
+}
+
+/* --- [핵심 복합 과녁판 스타일] --- */
+.target-wrapper {
+    position: relative;
+    width: 200px;
+    height: 200px;
+    margin: 20px auto;
+    background: #1a1a2e;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 4px solid #0f4c75;
+    box-shadow: 0 0 20px rgba(15, 76, 117, 0.6);
+}
+
+#target {
+    font-size: 120px;
+    line-height: 200px;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    left: 0;
+    top: 0;
+    user-select: none;
+    z-index: 1;
+    transition: 0.3s;
+}
+
+/* 상하 조준선 (가로선) */
+.aim-line-y {
+    position: absolute;
+    left: 0;
+    top: 0px;
+    width: 100%;
+    height: 4px;
+    background: #ff4757;
+    box-shadow: 0 0 8px #ff4757;
+    z-index: 2;
+    display: none;
+}
+
+/* 좌우 조준선 (세로선) */
+.aim-line-x {
+    position: absolute;
+    left: 0px;
+    top: 0;
+    width: 4px;
+    height: 100%;
+    background: #00d2d3;
+    box-shadow: 0 0 8px #00d2d3;
+    z-index: 2;
+    display: none;
+}
+
+#ball{
+    font-size:50px;
+    margin:10px 0;
+}
+
+.record{
+    background:#1f4068;
+    padding:15px;
+    margin-top:30px;
+    border-radius: 10px;
+}
+
+.home-btn {
+    display: inline-block;
+    margin-top: 20px;
+    color: #b2bec3;
+    text-decoration: none;
+    font-size: 0.9rem;
+    border-bottom: 1px solid #b2bec3;
+    padding-bottom: 2px;
+}
+
+.status-msg {
+    color: #ffd700;
+    font-weight: bold;
+    margin: 10px 0;
+    min-height: 24px;
+}
+
+.bonus-badge {
+    background: #ff4757;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 0.85rem;
+    display: inline-block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.action-btn {
+    width: 80%;
+    padding: 15px;
+    font-size: 1.1rem;
+    margin: 10px 0;
+}
+
+#btn-next-ready {
+    background: #2ed573;
+    box-shadow: 0 4px 15px rgba(46, 213, 115, 0.4);
+    display: none;
+}
+#btn-next-ready:active {
+    background: #26af5f;
+}
+</style>
+
+</head>
+
+<body>
+
+<h1>🏃⚽ Run Kick Challenge</h1>
+
+<div class="box">
+
+<h3 id="level">난이도 : EASY</h3>
+
+<h3>러닝 거리 입력</h3>
+<input id="km" type="number" placeholder="km 입력" min="1">
+<button onclick="getTicket()">받기</button>
+<p id="ticket">보유권 : 0</p>
+<p id="shoot-count-view" style="font-size: 0.9rem; color: #a4b0be;">오늘의 누적 슈팅 횟수: 0회</p>
+
+<hr style="border: 0; border-top: 1px solid #0f4c75;">
+
+<div id="bonus-info" class="bonus-badge" style="display:none;">특수 슛 조준 중!</div>
+<h4 id="game-status" class="status-msg">거리를 입력해 슈팅권을 얻으세요!</h4>
+
+<button id="btn-game-action" class="action-btn" onclick="handleGameAction()" disabled>게임 시작 불가</button>
+<button id="btn-next-ready" class="action-btn" onclick="startNextShoot()">🎮 재시도 (다음 슈팅 준비)</button>
+
+<div class="target-wrapper">
+    <div id="target">🎯</div>
+    <div id="line-y" class="aim-line-y"></div> <div id="line-x" class="aim-line-x"></div> </div>
+
+<div id="ball">⚽</div>
+
+<h2 id="result"></h2>
+
+<div class="record">
+<p>오늘 BEST : <span id="today">0</span>m</p>
+<p>월간 BEST : <span id="month">0</span>m</p>
+<p>누적 거리 : <span id="daily">0</span>m</p>
+</div>
+
+</div>
+
+<a href="index.html" class="home-btn">← 홈화면으로 돌아가기</a>
+
+<script>
+let ticket = 0;
+let gameState = "ready"; // ready -> power_phase -> direction_phase -> result_phase
+let savedPowerAccuracy = 0;
+let todayShootCount = Number(localStorage.getItem("todayShootCount")) || 0; 
+
+let todayBest = Number(localStorage.getItem("today")) || 0;
+let monthBest = Number(localStorage.getItem("month")) || 0;
+let dailyDistance = Number(localStorage.getItem("dailyDistance")) || 0;
+
+// 조준선 좌표 제어용
+let countY = 0;
+let dirY = 2;
+let countX = 0;
+let dirX = 2;
+let powerInterval, directionInterval;
+let baseSpeed = 2; // 기본 속도
+
+document.getElementById("today").innerText = todayBest;
+document.getElementById("month").innerText = monthBest;
+document.getElementById("daily").innerText = dailyDistance;
+document.getElementById("shoot-count-view").innerText = "오늘의 누적 슈팅 횟수: " + todayShootCount + "회";
+
+function checkNextShootBonus() {
+    let nextShoot = todayShootCount + 1;
+    const bonusInfo = document.getElementById("bonus-info");
+    
+    if (nextShoot > 0 && nextShoot % 5 === 0) {
+        bonusInfo.style.display = "inline-block";
+        if (nextShoot % 10 === 0) {
+            bonusInfo.innerText = "🥇 다음 슛: 골든 슛! (보너스 거리 1.5배)";
+            bonusInfo.style.background = "#ffa500";
+        } else {
+            bonusInfo.innerText = "🥈 다음 슛: 실버 슛! (보너스 거리 1.25배)";
+            bonusInfo.style.background = "#a4b0be";
+        }
+    } else {
+        bonusInfo.style.display = "none";
+    }
+}
+
+function updateUI() {
+    document.getElementById("ticket").innerText = "보유권 : " + ticket;
+    document.getElementById("shoot-count-view").innerText = "오늘의 누적 슈팅 횟수: " + todayShootCount + "회";
+    
+    const statusMsg = document.getElementById("game-status");
+    const btnAction = document.getElementById("btn-game-action");
+    const btnNextReady = document.getElementById("btn-next-ready");
+    const lineY = document.getElementById("line-y");
+    const lineX = document.getElementById("line-x");
+
+    if (gameState === "result_phase") {
+        btnAction.style.display = "none";
+        if (ticket > 0) {
+            btnNextReady.style.display = "inline-block";
+            statusMsg.innerText = "결과 확인 후 [재시도] 버튼을 눌러 다음 판을 진행하세요!";
+        } else {
+            btnNextReady.style.display = "none";
+            statusMsg.innerText = "슈팅권을 모두 사용했습니다! 거리를 더 입력하세요.";
+        }
+        return;
+    }
+
+    btnNextReady.style.display = "none";
+    btnAction.style.display = "inline-block";
+
+    if (ticket <= 0 && gameState === "ready") {
+        btnAction.disabled = true;
+        btnAction.innerText = "슈팅권 없음";
+        btnAction.style.background = "#555";
+        statusMsg.innerText = "거리를 입력해 슈팅권을 얻으세요!";
+        lineY.style.display = "none";
+        lineX.style.display = "none";
+    } else if (gameState === "ready" && ticket > 0) {
+        btnAction.disabled = false;
+        btnAction.innerText = "정중앙 조준! [상하 멈추기]";
+        btnAction.style.background = "#e43f5a";
+        statusMsg.innerText = "1단계: 빨간 가로선이 위아래로 움직입니다! 정중앙을 저격하세요!";
+        lineY.style.display = "block";
+        lineX.style.display = "none";
+        checkNextShootBonus();
+        
+        clearInterval(powerInterval);
+        startPowerAim();
+    }
+}
+
+// 하나의 버튼으로 상태에 따라 분기 처리
+function handleGameAction() {
+    if (gameState === "ready") {
+        lockPower();
+    } else if (gameState === "direction_phase") {
+        kick();
+    }
+}
+
+// 수동 [재시도] 버튼 클릭 시 완전 초기화 후 다음 슈팅 세팅
+function startNextShoot() {
+    document.getElementById("result").innerHTML = "";
+    document.getElementById("line-y").style.top = "0px";
+    document.getElementById("line-x").style.left = "0px";
+    
+    gameState = "ready";
+    updateUI();
+}
+
+// 1단계: 상하 가로선 조준 구동
+function startPowerAim() {
+    countY = 0;
+    // 점수에 따른 조준선 이동 속도 제어
+    if(dailyDistance > 1500) { baseSpeed = 5; document.getElementById("level").innerText = "난이도 : HARD"; }
+    else if(dailyDistance > 500) { baseSpeed = 3.5; document.getElementById("level").innerText = "난이도 : NORMAL"; }
+    else { baseSpeed = 2; document.getElementById("level").innerText = "난이도 : EASY"; }
+    
+    dirY = baseSpeed;
+    powerInterval = setInterval(() => {
+        countY += dirY;
+        if(countY >= 196 || countY <= 0) { dirY *= -1; }
+        document.getElementById("line-y").style.top = countY + "px";
+    }, 15);
+}
+
+// 2단계: 좌우 세로선 조준 구동
+function startDirectionAim() {
+    countX = 0;
+    dirX = baseSpeed;
+    directionInterval = setInterval(() => {
+        countX += dirX;
+        if(countX >= 196 || countX <= 0) { dirX *= -1; }
+        document.getElementById("line-x").style.left = countX + "px";
+    }, 15);
+}
+
+function getTicket(){
+    let kmInput = document.getElementById("km").value;
+    let km = Math.floor(Number(kmInput));
+
+    if(!kmInput || km < 1){
+        alert("1km 이상 올바른 숫자를 입력하세요.");
+        return;
+    }
+
+    ticket = ticket + km; 
+    alert("🎉 성공! " + km + "km를 입력하여 " + km + "개의 슈팅 기회를 획득했습니다.");
+    document.getElementById("km").value = "";
+
+    if(gameState === "ready" || gameState === "result_phase") {
+        updateUI();
+    } else {
+        document.getElementById("ticket").innerText = "보유권 : " + ticket;
+    }
+}
+
+// 상하 멈춤 및 좌우 페이즈 시작
+function lockPower() {
+    clearInterval(powerInterval); 
+    
+    // 과녁 높이 200px의 중앙인 100px 기준 오차 측정
+    let currentPowerAccuracy = 100 - Math.abs(100 - countY);
+    savedPowerAccuracy = currentPowerAccuracy < 0 ? 0 : currentPowerAccuracy;
+
+    gameState = "direction_phase";
+    
+    const btnAction = document.getElementById("btn-game-action");
+    const statusMsg = document.getElementById("game-status");
+    const lineX = document.getElementById("line-x");
+
+    btnAction.innerText = "🎯 최종 슛 날리기!!";
+    btnAction.style.background = "#00d2d3";
+    statusMsg.innerText = "2단계: 하늘색 세로선이 양옆으로 움직입니다! 십자 정중앙을 완성하세요!";
+    
+    lineX.style.display = "block";
+    clearInterval(directionInterval);
+    startDirectionAim();
+}
+
+// 최종 슛 발사 및 결과 잠금
+function kick(){
+    clearInterval(directionInterval); // 좌우선 완전 정지
+
+    ticket--;
+    todayShootCount++; 
+    localStorage.setItem("todayShootCount", todayShootCount);
+
+    let perfectLimit = 90;
+    let targetScale = 1;
+
+    if(dailyDistance > 1500) { perfectLimit = 95; targetScale = 0.7; }
+    else if(dailyDistance > 500) { perfectLimit = 92; targetScale = 0.85; }
+
+    document.getElementById("target").style.transform = "scale(" + targetScale + ")";
+
+    // 과녁 너비 200px의 중앙인 100px 기준 오차 측정
+    let direction
