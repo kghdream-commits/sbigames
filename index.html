@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,120 +7,107 @@
 <title>Baseball Hit Challenge</title>
 
 <style>
+
 body{
     margin:0;
-    background:#0b1d2a;
+    background:#111;
     color:white;
-    font-family:Malgun Gothic,sans-serif;
     text-align:center;
+    font-family:Arial, sans-serif;
 }
 
 h1{
     color:#ffd700;
 }
 
+
 .game{
-    width:95%;
     max-width:420px;
     margin:auto;
-    background:#123;
-    border-radius:20px;
-    padding:15px;
 }
 
 
-/* 야구장 */
 .field{
+
     position:relative;
-    height:420px;
+    height:600px;
     overflow:hidden;
-    border-radius:20px;
-    background:
-    linear-gradient(#18344d,#235c35);
-    border:3px solid #456;
+
+    background:url("ground.png") center/cover;
+
 }
 
 
 /* 타격존 */
+
 .zone{
 
-    position:absolute;
-    width:170px;
-    height:220px;
-    left:50%;
-    top:80px;
+position:absolute;
 
-    transform:translateX(-50%);
+width:170px;
+height:220px;
 
-    border:3px solid white;
-    box-shadow:0 0 20px #00ffff;
+left:50%;
+top:150px;
+
+transform:translateX(-50%);
+
+border:3px solid white;
 
 }
 
 
-/* 십자가 */
-
 .cross-x{
-    position:absolute;
-    width:170px;
-    height:3px;
-    background:#ff4757;
-    top:50%;
+
+position:absolute;
+width:100%;
+height:3px;
+
+top:50%;
+
+background:red;
+
 }
 
 
 .cross-y{
-    position:absolute;
-    height:220px;
-    width:3px;
-    background:#00d2d3;
-    left:50%;
+
+position:absolute;
+
+height:100%;
+width:3px;
+
+left:50%;
+
+background:#00ffff;
+
 }
 
 
-
-/* 공 */
 
 .ball{
 
-    position:absolute;
-    font-size:45px;
-    left:50%;
-    top:420px;
+position:absolute;
 
-    transform:translateX(-50%);
+width:50px;
+
+left:50%;
+top:550px;
+
+transform:translateX(-50%);
 
 }
 
 
 
-/* 배트 */
-
-.bat{
+.player{
 
 position:absolute;
-right:30px;
-bottom:40px;
-font-size:70px;
 
-}
+right:20px;
+bottom:20px;
 
-
-
-/* 버튼 */
-
-button{
-
-padding:15px;
-margin:10px;
-
-border:0;
-border-radius:12px;
-
-background:#e43f5a;
-color:white;
-font-size:18px;
-font-weight:bold;
+width:140px;
 
 }
 
@@ -128,18 +115,25 @@ font-weight:bold;
 
 .result{
 
-font-size:28px;
 height:50px;
+font-size:30px;
+
 color:#ffd700;
 
 }
 
 
-.info{
 
-background:#1d3557;
-padding:10px;
-border-radius:10px;
+button{
+
+padding:15px 30px;
+font-size:20px;
+
+border:0;
+border-radius:15px;
+
+background:#e43f5a;
+color:white;
 
 }
 
@@ -151,17 +145,10 @@ border-radius:10px;
 <body>
 
 
-<h1>⚾ Baseball Hit Challenge</h1>
+<h1>⚾ Baseball Hit</h1>
 
 
 <div class="game">
-
-
-<div class="info">
-
-거리 입력 대신 타격권 테스트
-
-</div>
 
 
 <div class="field">
@@ -175,41 +162,38 @@ border-radius:10px;
 </div>
 
 
+<img id="ball" class="ball" src="ball.png">
 
-<div id="ball" class="ball">
-⚾
+
+<img class="player" src="player.png">
+
+
+<img id="effect" style="
+display:none;
+position:absolute;
+width:250px;
+left:50%;
+top:200px;
+transform:translateX(-50%);
+" src="homerun.png">
+
+
 </div>
 
 
-<div class="bat">
-🏏
-</div>
-
-
-</div>
-
-
-<div class="result" id="result">
+<div id="result" class="result">
 준비
 </div>
 
 
-<button onclick="startGame()">
-타격 시작
+<button onclick="start()">
+공 던지기
 </button>
 
 
 <button onclick="hit()">
-스윙 (스페이스)
+스윙
 </button>
-
-
-<div class="info">
-
-오늘 최고 :
-<span id="best">0</span> m
-
-</div>
 
 
 </div>
@@ -219,178 +203,110 @@ border-radius:10px;
 <script>
 
 
-let ball;
+let ball=document.getElementById("ball");
+
+let moving=false;
+
+let y=550;
+
 let timer;
 
-let playing=false;
-
-let best =
-Number(localStorage.getItem("best")) || 0;
 
 
-document.getElementById("best").innerText=best;
+function start(){
+
+if(moving)return;
 
 
+moving=true;
 
-let ballX=50;
-let ballY=100;
+y=550;
 
-
-
-window.onload=function(){
-
-document.addEventListener("keydown",e=>{
-
-if(e.code==="Space"){
-hit();
-}
-
-});
-
-
-}
-
-
-
-function startGame(){
-
-
-if(playing)return;
-
-
-playing=true;
-
-
-ball=document.getElementById("ball");
-
-
-ballY=430;
-
-
-ballX=Math.random()*60+20;
-
-
-
-ball.style.left=ballX+"%";
-ball.style.top=ballY+"px";
-
+ball.style.top=y+"px";
 
 
 timer=setInterval(()=>{
 
 
-ballY-=5;
+y-=6;
+
+ball.style.top=y+"px";
 
 
-ball.style.top=ballY+"px";
-
-
-
-if(ballY<80){
+if(y<150){
 
 clearInterval(timer);
-playing=false;
+
+moving=false;
 
 document.getElementById("result").innerText=
-"⚾ 타이밍 실패";
+"타이밍 실패";
 
 }
-
 
 
 },20);
 
 
-
 }
+
 
 
 
 function hit(){
 
 
-if(!playing)return;
-
+if(!moving)return;
 
 
 clearInterval(timer);
-playing=false;
+
+moving=false;
 
 
 
-let zoneX=50;
-let zoneY=190;
+let error=Math.abs(y-260);
 
 
 
-let hitX=ballX;
-let hitY=ballY;
-
-
-
-let error=Math.sqrt(
-
-Math.pow((hitX-zoneX)*2,2)+
-
-Math.pow((hitY-zoneY),2)
-
-);
-
-
-
-let text;
-let dist;
+let result="";
 
 
 
 if(error<25){
 
-text="🔥 HOME RUN";
-dist=120;
+result="🔥 HOME RUN";
+
+document.getElementById("effect").style.display="block";
+
 
 }
 
-else if(error<55){
+else if(error<70){
 
-text="💥 3루타";
-dist=80;
+result="💥 3루타";
 
 }
 
-else if(error<90){
+else if(error<130){
 
-text="⚾ 2루타";
-dist=50;
+result="⚾ 2루타";
 
 }
 
 else{
 
-text="❌ 헛스윙";
-dist=0;
+result="❌ 헛스윙";
 
 }
 
 
 
-document.getElementById("result").innerText=
-text+" "+dist+"m";
-
-
-
-if(dist>best){
-
-best=dist;
-
-localStorage.setItem("best",best);
-
-document.getElementById("best").innerText=best;
-
-}
-
+document.getElementById("result").innerText=result;
 
 
 }
+
 
 
 </script>
