@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Run Kick Challenge - Fixed UI</title>
+<style>
+    body { text-align: center; font-family: 'Malgun Gothic', sans-serif; background: #1a1a2e; color: #fff; margin: 0; padding: 20px; user-select: none; }
+    .box { width: 90%; max-width: 420px; margin: auto; background: #162447; padding: 20px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.4); border: 1px solid #0f4c75; }
+    
+    /* 버튼 통합 스타일 */
+    button { display: block; width: 100%; margin: 10px auto; padding: 15px; border: none; border-radius: 12px; cursor: pointer; background: #e43f5a; color: white; font-weight: bold; font-size: 1.1rem; box-shadow: 0 5px 0 #b22c44; transition: all 0.1s; }
+    button:active { transform: translateY(4px); box-shadow: 0 1px 0 #b22c44; }
+    #btn-reset { background: #2ed573; box-shadow: 0 5px 0 #21a054; }
+
+    .center-target-wrapper { position: relative; width: 280px; height: 280px; margin: 25px auto; background: #111d35; border-radius: 24px; border: 3px solid #0f4c75; overflow: hidden; }
+    #goal-frame { position: absolute; width: 200px; height: 140px; border: 5px solid #fff; border-top-left-radius: 50px; border-top-right-radius: 50px; left: 40px; top: 40px; }
+    #keeper { position: absolute; width: 40px; height: 40px; left: 80px; top: 60px; font-size: 30px; transition: transform 0.3s; }
+    
+    #ball { font-size: 45px; transition: transform 0.5s ease-out; margin: 20px 0; }
+    .gauge-v-track { position: absolute; left: 15px; top: 20px; width: 14px; height: 240px; background: rgba(255,255,255,0.08); border-radius: 7px; }
+    .gauge-v-pointer { position: absolute; left: -4px; width: 22px; height: 12px; background: #ff4757; border-radius: 4px; }
+    .gauge-h-track { position: absolute; left: 40px; bottom: 15px; width: 200px; height: 14px; background: rgba(255,255,255,0.08); border-radius: 7px; }
+    .gauge-h-pointer { position: absolute; left: 0px; top: -4px; width: 12px; height: 22px; background: #00d2d3; border-radius: 4px; }
+</style>
+</head>
+
+<body>
+    <h1>🏃⚽ Run Kick Challenge</h1>
+    <div class="box">
+        <div style="display: flex; gap: 10px;">
+            <input id="km" type="number" placeholder="km 입력" style="flex: 1; padding: 10px; border-radius: 8px; border: none;">
+            <button onclick="getTicket()" style="margin: 0; width: 80px;">받기</button>
+        </div>
+        
+        <h3 id="ticket-view">보유권 : 0</h3>
+        <button id="main-shoot-btn" onclick="handleShootClick()">슈팅 준비</button>
+        <button id="btn-reset" onclick="resetToReady()" style="display: none;">🎮 재시도 (스페이스바)</button>
+
+        <div class="center-target-wrapper">
+            <div id="goal-frame"><div id="keeper">🧤</div></div>
+            <div class="gauge-v-track"><div id="power-bar" class="gauge-v-pointer"></div></div>
+            <div class="gauge-h-track"><div id="direction-bar" class="gauge-h-pointer"></div></div>
+        </div>
+        <div id="ball">⚽</div>
+        <h2 id="result"></h2>
+    </div>
+
+<script>
+    let ticket = 0, gameState = "ready", vPos = 0, hPos = 0, vDir = 4, hDir = 4, vInt, hInt;
+
+    // ⌨️ 스페이스바 이벤트 리스너 추가
+    window.addEventListener("keydown", (e) => { 
+        if (e.code === "Space") {
+            e.preventDefault(); // 스크롤 방지
+            handleShootClick(); 
+        }
+    });
+
+    function handleShootClick() {
+        if (gameState === "ready" && ticket > 0) {
+            gameState = "v"; 
+            vInt = setInterval(() => { vPos += vDir; if(vPos > 228 || vPos < 0) vDir *= -1; document.getElementById("power-bar").style.top = vPos+"px"; }, 15);
+        } else if (gameState === "v") {
+            clearInterval(vInt); gameState = "h"; 
+            hInt = setInterval(() => { hPos += hDir; if(hPos > 188 || hPos < 0) hDir *= -1; document.getElementById("direction-bar").style.left = hPos+"px"; }, 15);
+        } else if (gameState === "h") {
+            clearInterval(hInt); finishGame();
+        } else if (gameState === "result") {
+            resetToReady();
+        }
+    }
+
+    function finishGame() {
+        let b = document.getElementById("ball"), k = document.getElementById("keeper");
+        let isGoal = Math.abs(114 - vPos) < 40 && Math.abs(94 - hPos) < 40;
+        gameState = "result"; ticket--;
+        
+        if(isGoal) {
+            k.style.transform = "translateX(50px)";
+            b.style.transform = "scale(0.3) translateY(-120px)";
+            document.getElementById("result").innerText = "GOAL!!";
+        } else {
+            k.style.transform = "translateX(-20px)";
+            b.style.transform = "translateY(50px)";
+            document.getElementById("result").innerText = "BLOCKED!";
+        }
+        
+        document.getElementById("btn-reset").style.display = "block";
+        document.getElementById("main-shoot-btn").style.display = "none";
+        document.getElementById("ticket-view").innerText = "보유권 : " + ticket;
+    }
+
+    function resetToReady() {
+        document.getElementById("ball").style.transform = "none";
+        document.getElementById("keeper").style.transform = "none";
+        document.getElementById("result").innerText = "";
+        document.getElementById("btn-reset").style.display = "none";
+        document.getElementById("main-shoot-btn").style.display = "block";
+        gameState = "ready";
+    }
+
+    function getTicket() {
+        let val = Number(document.getElementById("km").value);
+        if (val > 0) { ticket += val; document.getElementById("ticket-view").innerText = "보유권 : " + ticket; }
+    }
+</script>
+</body>
+</html>
