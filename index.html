@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Baseball Hit Challenge</title>
+
+
+<style>
+
+body{
+margin:0;
+background:#111;
+color:white;
+text-align:center;
+font-family:'Malgun Gothic';
+}
+
+
+.game{
+max-width:430px;
+width:95%;
+margin:auto;
+}
+
+
+
+.field{
+
+position:relative;
+
+height:620px;
+
+background:url("ground.png") center/cover;
+
+border-radius:20px;
+
+overflow:hidden;
+
+}
+
+
+
+/* 타격존 */
+
+.zone{
+
+position:absolute;
+
+width:180px;
+height:240px;
+
+left:50%;
+top:150px;
+
+transform:translateX(-50%);
+
+border:3px solid white;
+
+box-shadow:0 0 20px #00ffff;
+
+}
+
+
+
+/* 십자 기준선 */
+
+.cross-x{
+
+position:absolute;
+width:100%;
+height:3px;
+top:50%;
+background:#ffd700;
+
+}
+
+
+.cross-y{
+
+position:absolute;
+height:100%;
+width:3px;
+left:50%;
+background:#ffd700;
+
+}
+
+
+
+
+/* 퍼펙트 영역 */
+
+.center{
+
+position:absolute;
+
+width:55px;
+height:55px;
+
+left:50%;
+top:50%;
+
+transform:translate(-50%,-50%);
+
+border-radius:10px;
+
+background:rgba(255,215,0,0.35);
+
+border:3px solid #ffd700;
+
+box-shadow:
+0 0 20px #ffd700,
+0 0 45px #ff8c00;
+
+animation:pulse 1s infinite;
+
+z-index:8;
+
+}
+
+
+
+@keyframes pulse{
+
+0%{
+transform:translate(-50%,-50%) scale(1);
+}
+
+50%{
+transform:translate(-50%,-50%) scale(1.2);
+}
+
+100%{
+transform:translate(-50%,-50%) scale(1);
+}
+
+}
+
+
+
+
+/* ==================
+상하 게이지
+================== */
+
+
+.v-gauge{
+
+
+position:absolute;
+
+left:50%;
+top:0;
+
+transform:translateX(-50%);
+
+
+width:24px;
+
+height:100%;
+
+
+background:#ff4757;
+
+
+z-index:5;
+
+
+display:none;
+
+}
+
+
+
+.v-bar{
+
+
+position:absolute;
+
+left:-6px;
+
+width:36px;
+
+height:35px;
+
+
+background:white;
+
+border-radius:10px;
+
+
+box-shadow:
+0 0 15px white;
+
+
+}
+
+
+
+
+/* ==================
+좌우 게이지
+================== */
+
+
+.h-gauge{
+
+
+position:absolute;
+
+
+left:0;
+
+top:50%;
+
+
+transform:translateY(-50%);
+
+
+width:100%;
+
+
+height:24px;
+
+
+
+background:#00d2d3;
+
+
+
+z-index:6;
+
+
+
+display:none;
+
+
+
+}
+
+
+
+.h-bar{
+
+
+position:absolute;
+
+
+top:-6px;
+
+
+width:35px;
+
+
+height:36px;
+
+
+
+background:white;
+
+
+
+border-radius:10px;
+
+
+
+box-shadow:
+0 0 15px white;
+
+
+}
+
+
+
+
+
+.player{
+
+
+position:absolute;
+
+right:15px;
+
+bottom:15px;
+
+width:120px;
+
+
+}
+
+
+
+
+
+.result{
+
+height:60px;
+
+font-size:28px;
+
+color:#ffd700;
+
+}
+
+
+
+button{
+
+padding:15px 25px;
+
+margin:8px;
+
+font-size:18px;
+
+border-radius:15px;
+
+border:0;
+
+background:#e43f5a;
+
+color:white;
+
+}
+
+
+</style>
+
+
+</head>
+
+
+<body>
+
+
+
+<h1>⚾ Baseball Hit Challenge</h1>
+
+
+
+<div class="game">
+
+
+
+<div class="field">
+
+
+
+<div class="zone">
+
+
+<div class="cross-x"></div>
+
+<div class="cross-y"></div>
+
+
+<div class="center"></div>
+
+
+
+<div id="vg" class="v-gauge">
+
+<div id="vbar" class="v-bar"></div>
+
+</div>
+
+
+
+<div id="hg" class="h-gauge">
+
+<div id="hbar" class="h-bar"></div>
+
+</div>
+
+
+
+</div>
+
+
+
+
+<img class="player" src="player.png">
+
+
+
+</div>
+
+
+
+
+<div id="result" class="result">
+준비
+</div>
+
+
+
+<button onclick="start()">
+시작
+</button>
+
+
+<button onclick="action()">
+스윙
+</button>
+
+
+
+</div>
+
+
+
+
+
+<script>
+
+
+let state="ready";
+
+
+let v=0;
+let h=0;
+
+
+let vd=3;
+let hd=3;
+
+
+let vi;
+let hi;
+
+
+
+
+document.addEventListener(
+"keydown",
+e=>{
+
+if(e.code==="Space")
+action();
+
+});
+
+
+
+
+
+function start(){
+
+
+
+clearInterval(vi);
+clearInterval(hi);
+
+
+
+state="vertical";
+
+
+
+v=0;
+h=0;
+
+
+
+document.getElementById("vbar")
+.style.top="0px";
+
+
+document.getElementById("hbar")
+.style.left="0px";
+
+
+
+document.getElementById("vg")
+.style.display="block";
+
+
+document.getElementById("hg")
+.style.display="none";
+
+
+
+document.getElementById("result")
+.innerText="상하 조준";
+
+
+
+
+
+vi=setInterval(()=>{
+
+
+v+=vd;
+
+
+if(v>=205 || v<=0)
+vd*=-1;
+
+
+
+document.getElementById("vbar")
+.style.top=v+"px";
+
+
+
+},15);
+
+
+
+
+}
+
+
+
+
+
+function action(){
+
+
+
+if(state==="vertical"){
+
+
+
+clearInterval(vi);
+
+
+
+state="horizontal";
+
+
+
+document.getElementById("hg")
+.style.display="block";
+
+
+
+document.getElementById("result")
+.innerText="좌우 조준";
+
+
+
+hi=setInterval(()=>{
+
+
+h+=hd;
+
+
+if(h>=145 || h<=0)
+hd*=-1;
+
+
+
+document.getElementById("hbar")
+.style.left=h+"px";
+
+
+
+},15);
+
+
+
+}
+
+
+
+
+
+else if(state==="horizontal"){
+
+
+
+clearInterval(hi);
+
+
+
+judge();
+
+
+state="end";
+
+
+
+}
+
+
+
+}
+
+
+
+
+
+
+function judge(){
+
+
+
+let a=Math.abs(v-102);
+
+let b=Math.abs(h-72);
+
+
+
+let error=Math.sqrt(
+a*a+b*b
+);
+
+
+
+let text;
+
+
+
+if(error<25)
+
+text="🔥 HOME RUN";
+
+
+else if(error<60)
+
+text="💥 3루타";
+
+
+else if(error<100)
+
+text="⚾ 2루타";
+
+
+else
+
+text="❌ 헛스윙";
+
+
+
+
+document.getElementById("result")
+.innerText=text;
+
+
+
+}
+
+
+
+
+</script>
+
+
+</body>
+</html>
