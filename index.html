@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Run Kick Challenge</title>
+
+<style>
+body {
+    text-align:center;
+    font-family:Malgun Gothic;
+    background:#1a1a2e;
+    color:white;
+    margin:0;
+    padding:20px;
+}
+
+.box {
+    max-width:420px;
+    margin:auto;
+    background:#162447;
+    padding:20px;
+    border-radius:20px;
+}
+
+/* 버튼 */
+button {
+    width:100%;
+    padding:12px;
+    margin:6px 0;
+    border-radius:12px;
+    border:none;
+    background:#e43f5a;
+    color:white;
+    font-weight:bold;
+}
+button:disabled {
+    background:#555;
+}
+
+/* 골대 */
+.wrap {
+    position:relative;
+    width:280px;
+    height:280px;
+    margin:20px auto;
+    background:#111d35;
+    border-radius:20px;
+    border:3px solid #0f4c75;
+    overflow:hidden;
+}
+
+/* 골대 */
+#goal {
+    position:absolute;
+    left:80px;
+    top:75px;
+    font-size:110px;
+}
+
+/* 키퍼 */
+#keeper {
+    position:absolute;
+    left:90px;
+    top:95px;
+    font-size:30px;
+    transition:.4s;
+}
+
+/* 공 */
+#ball {
+    font-size:45px;
+    transition:.7s;
+}
+
+/* 게이지 */
+.vtrack,.htrack {
+    position:absolute;
+    background:rgba(255,255,255,.08);
+}
+.vtrack {
+    left:15px;
+    top:20px;
+    width:14px;
+    height:240px;
+}
+.htrack {
+    left:40px;
+    bottom:15px;
+    width:200px;
+    height:14px;
+}
+
+.vbar,.hbar {
+    position:absolute;
+    background:#ff4757;
+}
+.vbar {
+    width:22px;
+    height:12px;
+    left:-4px;
+}
+.hbar {
+    width:12px;
+    height:22px;
+}
+
+/* 중앙 기준 (핵심) */
+.vcenter {
+    position:absolute;
+    left:-1px;
+    top:50%;
+    transform:translateY(-50%);
+    width:16px;
+    height:14px;
+    background:#ffd700;
+}
+.hcenter {
+    position:absolute;
+    top:-1px;
+    left:50%;
+    transform:translateX(-50%);
+    width:14px;
+    height:16px;
+    background:#ffd700;
+}
+
+/* 배지 */
+.badge {
+    text-align:center;
+    margin-bottom:10px;
+    min-height:24px;
+}
+.silver { background:#dfe6e9; color:#2d3436; padding:6px 10px; border-radius:8px;}
+.gold { background:#ffd700; color:#000; padding:6px 10px; border-radius:8px;}
+</style>
+</head>
+
+<body>
+
+<h1>⚽ Run Kick Challenge</h1>
+
+<div class="box">
+
+<div class="badge" id="badge"></div>
+
+<input id="km" type="number" placeholder="러닝 km">
+<button onclick="getTicket()">러닝 → 슈팅권</button>
+
+<h3 id="ticket">보유권 : 0</h3>
+
+<button id="btn" onclick="action()" disabled>슛 준비</button>
+
+<div class="wrap">
+
+<div id="goal">🥅</div>
+<div id="keeper">🧤</div>
+
+<div class="vtrack">
+<div class="vcenter"></div>
+<div id="vbar" class="vbar"></div>
+</div>
+
+<div class="htrack">
+<div class="hcenter"></div>
+<div id="hbar" class="hbar"></div>
+</div>
+
+</div>
+
+<div id="ball">⚽</div>
+<h2 id="result"></h2>
+
+</div>
+
+<script>
+
+let ticket=0;
+let state="ready";
+
+let v=0,h=0,vdir=4,hdir=4;
+let vint,hint;
+
+/* 슈팅권 */
+function getTicket(){
+    let km=+document.getElementById("km").value;
+    if(km<=0) return;
+
+    ticket+=km;
+    document.getElementById("ticket").innerText="보유권 : "+ticket;
+    document.getElementById("btn").disabled=false;
+}
+
+/* 상태 */
+function action(){
+
+    if(ticket<=0) return;
+
+    if(state==="ready"){
+        state="v";
+        vint=setInterval(()=>{
+            v+=vdir;
+            if(v>228||v<0)vdir*=-1;
+            document.getElementById("vbar").style.top=v+"px";
+        },15);
+
+        document.getElementById("btn").innerText="파워 고정";
+    }
+
+    else if(state==="v"){
+        clearInterval(vint);
+        state="h";
+
+        hint=setInterval(()=>{
+            h+=hdir;
+            if(h>188||h<0)hdir*=-1;
+            document.getElementById("hbar").style.left=h+"px";
+        },15);
+
+        document.getElementById("btn").innerText="각도 고정";
+    }
+
+    else if(state==="h"){
+        clearInterval(hint);
+        shoot();
+    }
+}
+
+/* 슛 */
+function shoot(){
+
+ticket--;
+
+const V=114,H=94,T=10;
+
+let perfect =
+Math.abs(v-V)<T && Math.abs(h-H)<T;
+
+let ball=document.getElementById("ball");
+let keeper=document.getElementById("keeper");
+let result=document.getElementById("result");
+let badge=document.getElementById("badge");
+
+/* 배지 조건 (중요: 기본 노출 X) */
+badge.innerHTML="";
+let shootNum=ticket;
+
+if(shootNum%10===0){
+    badge.innerHTML="<span class='gold'>GOLD SHOT</span>";
+}
+else if(shootNum%5===0){
+    badge.innerHTML="<span class='silver'>SILVER SHOT</span>";
+}
+
+/* 슛 */
+ball.style.transform="translateY(-240px) scale(0.4)";
+
+if(perfect){
+
+    result.innerText="🔥 GOAL";
+
+    keeper.style.transform="translateX(-40px) rotate(-25deg)";
+
+    setTimeout(()=>{
+        ball.style.transform="translateY(-280px) scale(0.2)";
+    },150);
+
+}else{
+
+    result.innerText="🧤 SAVED";
+
+    keeper.style.transform="translateX(-60px) rotate(-35deg)";
+
+    ball.style.transform="translateY(-120px) translateX(40px)";
+}
+
+/* 🔥 핵심: 재시작 보장 */
+state="ready";
+document.getElementById("btn").innerText="슛 준비";
+document.getElementById("btn").disabled=ticket<=0;
+}
+
+</script>
+
+</body>
+</html>
