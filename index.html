@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Baseball Hit Challenge</title>
+
+<style>
+
+*{box-sizing:border-box;}
+
+html,body{
+margin:0;
+height:100%;
+background:#111827;
+color:white;
+font-family:'Malgun Gothic',sans-serif;
+overflow:hidden;
+text-align:center;
+}
+
+/* ================= SCREEN ================= */
+
+.screen{
+position:absolute;
+width:100%;
+height:100%;
+display:flex;
+flex-direction:column;
+justify-content:center;
+align-items:center;
+}
+
+#gameScreen{ display:none; }
+
+/* ================= GAME FIELD ================= */
+
+.game{
+width:95%;
+max-width:420px;
+}
+
+.field{
+position:relative;
+height:420px;
+border-radius:20px;
+overflow:hidden;
+background:#1f2937;
+transition:0.2s;
+transform:scale(1);
+}
+
+/* zone */
+.zone{
+position:absolute;
+left:50%;
+top:50%;
+transform:translate(-50%,-50%);
+width:160px;
+height:200px;
+border:3px solid #00d2ff;
+}
+
+/* center */
+.center{
+position:absolute;
+width:24px;
+height:24px;
+left:50%;
+top:50%;
+transform:translate(-50%,-50%);
+background:gold;
+border-radius:6px;
+}
+
+/* ball */
+.ball{
+position:absolute;
+width:12px;
+height:12px;
+background:white;
+border-radius:50%;
+left:50%;
+top:0;
+transform:translateX(-50%);
+z-index:10;
+}
+
+/* gauge */
+.v-bar,.h-bar{
+position:absolute;
+width:16px;
+height:16px;
+background:white;
+border-radius:4px;
+}
+
+/* player */
+.player{
+position:absolute;
+right:10px;
+bottom:10px;
+width:90px;
+}
+
+/* shake */
+.shake{
+animation:shake .25s;
+}
+@keyframes shake{
+0%{transform:translate(0);}
+25%{transform:translate(6px,-4px);}
+50%{transform:translate(-6px,4px);}
+75%{transform:translate(4px,2px);}
+100%{transform:translate(0);}
+}
+
+/* UI */
+.info{
+margin:10px;
+font-size:18px;
+}
+
+button{
+padding:12px 18px;
+border:none;
+border-radius:10px;
+background:#e11d48;
+color:white;
+font-size:16px;
+cursor:pointer;
+}
+
+/* flash */
+.flash{
+animation:flash 0.2s;
+}
+@keyframes flash{
+0%{filter:brightness(1);}
+50%{filter:brightness(2);}
+100%{filter:brightness(1);}
+}
+
+/* HOME FX TEXT */
+.fx{
+position:absolute;
+top:40%;
+left:50%;
+transform:translate(-50%,-50%);
+font-size:22px;
+color:#00d2ff;
+display:none;
+z-index:99;
+}
+
+</style>
+</head>
+
+<body>
+
+<!-- ================= START SCREEN ================= -->
+<div id="startScreen" class="screen">
+<h1>⚾ Baseball Hit Challenge</h1>
+<p>10번의 기회로 홈런을 노려라</p>
+<button onclick="startGame()">START</button>
+</div>
+
+<!-- ================= GAME SCREEN ================= -->
+<div id="gameScreen" class="screen">
+
+<div class="info">
+🎯 기회: <span id="life">10</span> | 💥 결과: <span id="result">-</span>
+</div>
+
+<div class="game">
+
+<div id="field" class="field">
+
+<div class="zone">
+<div class="center"></div>
+
+<div id="vbar" class="v-bar"></div>
+<div id="hbar" class="h-bar"></div>
+
+<div id="ball" class="ball"></div>
+
+</div>
+
+<img class="player" src="player.png">
+
+<div id="fx" class="fx">💥 HOME RUN!</div>
+
+</div>
+
+</div>
+
+<button onclick="action()">SWING</button>
+
+</div>
+
+<script>
+
+/* ================= STATE ================= */
+
+let state="ready";
+let v=0,h=0;
+let vd=3,hd=3;
+
+let vi,hi;
+
+let life=10;
+let gameOver=false;
+
+/* ================= START GAME ================= */
+function startGame(){
+
+life=10;
+gameOver=false;
+
+document.getElementById("startScreen").style.display="none";
+document.getElementById("gameScreen").style.display="flex";
+
+resetRound();
+}
+
+/* ================= RESET ROUND ================= */
+function resetRound(){
+
+clearInterval(vi);
+clearInterval(hi);
+
+state="ready";
+
+v=0; h=0;
+vd=3; hd=3;
+
+document.getElementById("ball").style.top="0px";
+document.getElementById("vbar").style.top="0px";
+document.getElementById("hbar").style.left="60px";
+
+document.getElementById("result").innerText="-";
+document.getElementById("life").innerText=life;
+
+document.getElementById("fx").style.display="none";
+
+/* field reset */
+let field=document.getElementById("field");
+field.style.transform="scale(1)";
+field.classList.remove("shake");
+
+}
+
+/* ================= ACTION ================= */
+function action(){
+
+if(gameOver) return;
+
+if(state==="ready"){
+start();
+return;
+}
+
+if(state==="vertical"){
+clearInterval(vi);
+state="horizontal";
+
+hi=setInterval(()=>{
+
+h += hd;
+if(h>=120||h<=0) hd*=-1;
+
+document.getElementById("hbar").style.left=h+"px";
+
+},15);
+
+return;
+}
+
+if(state==="horizontal"){
+clearInterval(hi);
+judge();
+}
+
+}
+
+/* ================= START ================= */
+function start(){
+
+state="vertical";
+
+v=0; h=0;
+
+vi=setInterval(()=>{
+
+v += vd;
+if(v>=180||v<=0) vd*=-1;
+
+document.getElementById("vbar").style.top=v+"px";
+document.getElementById("ball").style.top=v+"px";
+
+},15);
+
+}
+
+/* ================= JUDGE ================= */
+function judge(){
+
+let dx=Math.abs(h-60);
+let dy=Math.abs(v-90);
+
+let result="❌ MISS";
+let isHR=false;
+
+if(dx<22 && dy<25){
+result="🔥 HOME RUN";
+isHR=true;
+}
+else if(dx<40){
+result="💥 HIT";
+}
+else{
+result="❌ MISS";
+}
+
+/* life */
+life--;
+
+document.getElementById("result").innerText=result;
+document.getElementById("life").innerText=life;
+
+/* effects */
+let field=document.getElementById("field");
+field.classList.add("flash");
+setTimeout(()=>field.classList.remove("flash"),200);
+
+/* HOME RUN FX */
+if(isHR){
+homeFly();
+}
+
+/* GAME OVER */
+if(life<=0){
+gameOver=true;
+
+setTimeout(()=>{
+document.getElementById("gameScreen").style.display="none";
+document.getElementById("startScreen").style.display="flex";
+},800);
+
+return;
+}
+
+/* next round */
+setTimeout(resetRound,500);
+
+}
+
+/* ================= HOME RUN FX ================= */
+function homeFly(){
+
+let field=document.getElementById("field");
+
+/* 🎥 강한 줌 */
+field.style.transition="0.2s";
+field.style.transform="scale(1.6) translateY(-40px)";
+
+/* 💥 텍스트 */
+let fx=document.getElementById("fx");
+fx.style.display="block";
+
+/* 🚀 1.2초 후 복구 */
+setTimeout(()=>{
+
+field.style.transform="scale(1)";
+fx.style.display="none";
+
+},1200);
+
+}
+
+</script>
+
+</body>
+</html>
