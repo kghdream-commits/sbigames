@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Baseball Swing Game</title>
+
+<style>
+
+*{box-sizing:border-box;}
+
+html,body{
+margin:0;
+height:100%;
+background:#111827;
+color:white;
+font-family:'Malgun Gothic',sans-serif;
+text-align:center;
+overflow:hidden;
+}
+
+h1{
+color:#ffd700;
+text-shadow:0 0 15px #ffd700;
+margin:10px 0;
+}
+
+.field{
+position:relative;
+height:420px;
+width:95%;
+max-width:430px;
+margin:auto;
+border-radius:25px;
+overflow:hidden;
+background:url("ground.png") center/cover;
+}
+
+/* BALL */
+#ball{
+position:absolute;
+width:14px;
+height:14px;
+border-radius:50%;
+background:white;
+box-shadow:0 0 10px white;
+left:50%;
+top:0;
+transform:translateX(-50%);
+}
+
+/* BAT */
+#bat{
+position:absolute;
+bottom:80px;
+left:55%;
+width:110px;
+transform-origin: bottom center;
+transform: translateX(-50%) rotate(0deg);
+z-index:10;
+}
+
+/* BAT SWING */
+.swing{
+animation: swingAnim 0.35s ease-out;
+}
+
+@keyframes swingAnim{
+0%{transform: translateX(-50%) rotate(0deg);}
+40%{transform: translateX(-50%) rotate(-65deg);}
+100%{transform: translateX(-50%) rotate(25deg);}
+}
+
+/* BATTER */
+#batter{
+position:absolute;
+bottom:20px;
+left:50%;
+width:130px;
+transform:translateX(-50%);
+z-index:5;
+}
+
+/* UI */
+.result{
+margin-top:10px;
+font-size:20px;
+color:#ffd700;
+}
+
+.scoreboard{
+margin-top:5px;
+font-size:14px;
+color:white;
+}
+
+/* BUTTON */
+button{
+position:absolute;
+bottom:10px;
+left:50%;
+transform:translateX(-50%);
+width:90%;
+padding:14px;
+border:0;
+border-radius:15px;
+background:#e43f5a;
+color:white;
+font-size:18px;
+}
+
+.shake{
+animation:shake .25s;
+}
+
+@keyframes shake{
+0%{transform:translate(0);}
+25%{transform:translate(8px,-6px);}
+50%{transform:translate(-8px,6px);}
+75%{transform:translate(6px,3px);}
+100%{transform:translate(0);}
+}
+
+</style>
+</head>
+
+<body>
+
+<h1>⚾ SWING BASEBALL</h1>
+
+<div class="field">
+
+<div id="ball"></div>
+
+<!-- 🧍 타자 -->
+<img id="batter" src="batter.png">
+
+<!-- 🪵 배트 -->
+<img id="bat" src="bat.png">
+
+<button onclick="action()" id="btn">START</button>
+
+</div>
+
+<div class="result" id="result">READY</div>
+
+<div class="scoreboard">
+🎯 SCORE: <span id="score">0</span> |
+🏆 BEST: <span id="best">0</span> |
+❤️ LIFE: <span id="life">10</span> |
+🔥 COMBO: <span id="combo">0</span>
+</div>
+
+<script>
+
+let state="ready";
+
+let ballY=0;
+let ballTimer;
+
+let score=0;
+let best=Number(localStorage.getItem("best"))||0;
+let life=10;
+let combo=0;
+
+/* INIT */
+function init(){
+document.getElementById("best").innerText=best;
+}
+init();
+
+/* START */
+function start(){
+
+state="pitch";
+
+ballY=0;
+document.getElementById("ball").style.top="0px";
+
+ballTimer=setInterval(()=>{
+
+ballY += 4;
+document.getElementById("ball").style.top = ballY + "px";
+
+if(ballY > 360){
+clearInterval(ballTimer);
+miss();
+}
+
+},16);
+
+document.getElementById("btn").innerText="SWING";
+
+}
+
+/* ACTION */
+function action(){
+
+if(state==="ready"){
+start();
+return;
+}
+
+if(state==="pitch"){
+state="swing";
+
+/* bat swing */
+let bat=document.getElementById("bat");
+bat.classList.remove("swing");
+void bat.offsetWidth;
+bat.classList.add("swing");
+
+/* batter shake */
+document.getElementById("batter").style.transform="translateX(-50%) scale(1.05)";
+
+setTimeout(()=>{
+document.getElementById("batter").style.transform="translateX(-50%) scale(1)";
+judge();
+state="end";
+document.getElementById("btn").innerText="RETRY";
+},150);
+
+}
+
+if(state==="end"){
+resetGame();
+start();
+}
+
+}
+
+/* JUDGE */
+function judge(){
+
+let r=Math.random();
+let result="";
+let gain=0;
+
+if(r>0.75){
+result="🔥 HOME RUN";
+gain=300;
+combo++;
+}
+else if(r>0.45){
+result="💥 HIT";
+gain=150;
+combo=0;
+}
+else{
+result="❌ MISS";
+gain=0;
+combo=0;
+life--;
+}
+
+score += gain;
+
+/* BEST */
+if(score > best){
+best = score;
+localStorage.setItem("best",best);
+}
+
+/* UI */
+document.getElementById("result").innerText=result;
+document.getElementById("score").innerText=score;
+document.getElementById("best").innerText=best;
+document.getElementById("life").innerText=life;
+document.getElementById("combo").innerText=combo;
+
+/* GAME OVER */
+if(life<=0){
+setTimeout(()=>{
+alert("GAME OVER");
+location.reload();
+},300);
+}
+
+}
+
+/* MISS */
+function miss(){
+life--;
+combo=0;
+document.getElementById("result").innerText="❌ MISS";
+document.getElementById("life").innerText=life;
+document.getElementById("btn").innerText="RETRY";
+state="end";
+}
+
+function resetGame(){
+state="ready";
+document.getElementById("btn").innerText="START";
+document.getElementById("result").innerText="READY";
+}
+
+</script>
+
+</body>
+</html>
