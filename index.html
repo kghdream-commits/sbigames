@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Baseball Hit Challenge</title>
+
+<style>
+
+*{box-sizing:border-box;}
+
+html,body{
+margin:0;
+height:100%;
+background:#111827;
+color:white;
+font-family:'Malgun Gothic',sans-serif;
+text-align:center;
+overflow:hidden;
+}
+
+h1{
+color:#ffd700;
+text-shadow:0 0 15px #ffd700;
+margin:10px 0;
+}
+
+.game{
+width:95%;
+max-width:430px;
+margin:auto;
+}
+
+.field{
+position:relative;
+height:420px;
+border-radius:25px;
+overflow:hidden;
+background:url("ground.png") center/cover;
+
+/* 🔥 중요: transform 잔상 방지 */
+transform:scale(1) translateY(0);
+transition:0.2s;
+}
+
+/* pitch */
+.pitch{
+position:absolute;
+top:10px;
+left:50%;
+transform:translateX(-50%);
+font-size:18px;
+font-weight:bold;
+}
+
+/* zone */
+.zone{
+position:absolute;
+width:170px;
+height:200px;
+left:50%;
+top:110px;
+transform:translateX(-50%);
+border:3px solid white;
+box-shadow:0 0 20px #00ffff;
+}
+
+/* cross */
+.cross-x,.cross-y{
+position:absolute;
+background:#ffd700;
+}
+.cross-x{width:100%;height:3px;top:50%;}
+.cross-y{height:100%;width:3px;left:50%;}
+
+/* center */
+.center{
+position:absolute;
+width:28px;
+height:28px;
+left:50%;
+top:50%;
+transform:translate(-50%,-50%);
+border-radius:8px;
+background:rgba(255,215,0,.25);
+border:3px solid #ffd700;
+}
+
+/* gauge */
+.v-bar,.h-bar{
+position:absolute;
+width:18px;
+height:18px;
+background:white;
+border-radius:6px;
+}
+.v-bar{left:50%;transform:translateX(-50%);}
+.h-bar{top:50%;transform:translateY(-50%);}
+
+/* ball */
+.ball{
+position:absolute;
+width:10px;
+height:10px;
+border-radius:50%;
+background:#fff;
+box-shadow:0 0 10px #fff;
+left:50%;
+top:0;
+transform:translateX(-50%);
+z-index:20;
+transition:0s;
+}
+
+/* trail */
+.trail{
+position:absolute;
+width:6px;
+height:6px;
+border-radius:50%;
+background:rgba(255,255,255,0.5);
+}
+
+/* player */
+.player{
+position:absolute;
+right:8px;
+bottom:8px;
+width:90px;
+z-index:30;
+}
+
+/* shake */
+.shake{
+animation:shake .25s;
+}
+@keyframes shake{
+0%{transform:translate(0);}
+25%{transform:translate(8px,-6px);}
+50%{transform:translate(-8px,6px);}
+75%{transform:translate(6px,3px);}
+100%{transform:translate(0);}
+}
+
+/* UI */
+.result{
+font-size:20px;
+color:#ffd700;
+margin-top:8px;
+}
+.combo{
+font-size:16px;
+color:#ff4757;
+}
+#comboBonusText{
+font-size:14px;
+color:#ffd700;
+}
+
+/* button */
+button{
+position:absolute;
+bottom:10px;
+left:50%;
+transform:translateX(-50%);
+width:90%;
+padding:14px;
+border:0;
+border-radius:15px;
+background:#e43f5a;
+color:white;
+font-size:18px;
+}
+
+#fastFx{
+position:absolute;
+top:35%;
+left:50%;
+transform:translate(-50%,-50%);
+font-size:26px;
+color:#00d2ff;
+display:none;
+}
+
+</style>
+</head>
+
+<body>
+
+<h1>⚾ Baseball Hit</h1>
+
+<div class="game">
+
+<div id="field" class="field">
+
+<div id="pitch" class="pitch">준비</div>
+
+<div class="zone">
+<div class="cross-x"></div>
+<div class="cross-y"></div>
+<div class="center"></div>
+
+<div id="vbar" class="v-bar"></div>
+<div id="hbar" class="h-bar"></div>
+
+<div id="ball" class="ball"></div>
+
+</div>
+
+<img class="player" src="player.png">
+
+<div id="fastFx">⚡ 강속구!!</div>
+
+<button onclick="action()" id="btn">START</button>
+
+</div>
+
+<div id="result" class="result">준비</div>
+<div id="combo" class="combo">COMBO 0</div>
+<div id="comboBonusText">없음</div>
+
+</div>
+
+<script>
+
+let state="ready";
+
+let v=0,h=0;
+let vd=3,hd=3;
+
+let vi,hi;
+
+let combo=0;
+let pitchCount=0;
+let isFastball=false;
+let berserker=false;
+
+/* ================= RESET (잔상 완전 제거) ================= */
+function resetGame(){
+
+clearInterval(vi);
+clearInterval(hi);
+
+/* 상태 초기화 */
+state="ready";
+v=0; h=0;
+vd=3; hd=3;
+combo=0;
+berserker=false;
+
+/* UI 초기화 */
+document.getElementById("result").innerText="준비";
+document.getElementById("combo").innerText="COMBO 0";
+document.getElementById("comboBonusText").innerText="없음";
+
+/* 게이지 초기화 */
+document.getElementById("vbar").style.top="0px";
+document.getElementById("hbar").style.left="60px";
+
+/* ⚾ ball 완전 초기화 (중요) */
+let ball=document.getElementById("ball");
+ball.style.transition="none";
+ball.style.left="50%";
+ball.style.top="0";
+ball.style.opacity="1";
+ball.style.transform="translateX(-50%) scale(1)";
+
+/* 🎥 field transform 잔상 제거 */
+let field=document.getElementById("field");
+field.style.transform="scale(1) translateY(0)";
+field.style.filter="brightness(1)";
+
+/* 버튼 */
+document.getElementById("btn").innerText="START";
+
+/* DOM 강제 리셋 */
+void ball.offsetHeight;
+}
+
+/* ================= ACTION ================= */
+function action(){
+
+if(state==="end"){
+resetGame();
+start();
+return;
+}
+
+if(state==="ready"){
+start();
+return;
+}
+
+if(state==="vertical"){
+clearInterval(vi);
+state="horizontal";
+
+hi=setInterval(()=>{
+h += hd*(berserker?2:1);
+if(h>=120||h<=0) hd*=-1;
+
+document.getElementById("hbar").style.left=h+"px";
+},15);
+
+return;
+}
+
+if(state==="horizontal"){
+clearInterval(hi);
+judge();
+state="end";
+document.getElementById("btn").innerText="RETRY";
+}
+
+}
+
+/* ================= START ================= */
+function start(){
+
+state="vertical";
+
+v=0; h=0;
+pitchCount++;
+
+isFastball = (pitchCount % 5 === 0);
+
+document.getElementById("pitch").innerText =
+isFastball ? "💨 강속구 (2X)" : "⚾ 변화구";
+
+vd = isFastball ? 6 : 3;
+
+vi=setInterval(()=>{
+
+v += vd*(berserker?1.5:1);
+
+if(v>=180||v<=0) vd*=-1;
+
+document.getElementById("vbar").style.top=v+"px";
+document.getElementById("ball").style.top=v+"px";
+
+/* trail */
+let t=document.createElement("div");
+t.className="trail";
+t.style.left="50%";
+t.style.top=v+"px";
+document.querySelector(".zone").appendChild(t);
+setTimeout(()=>t.remove(),200);
+
+/* berserker */
+berserker = combo >= 5;
+
+document.body.style.background =
+berserker ? "#2b0b0b" : "#111827";
+
+},15);
+
+}
+
+/* ================= JUDGE ================= */
+function judge(){
+
+let dx = Math.abs(h - 60);
+let dy = Math.abs(v - 90);
+
+let result="";
+let distance=0;
+
+if(dx < 22 && dy < 25){
+result="🔥 HOME RUN";
+distance=300;
+
+combo++;
+homeFly();
+}
+else if(dx < 35 && dy < 50){
+result="💥 3루타";
+distance=200;
+combo=0;
+}
+else if(dx < 50 && dy < 75){
+result="⚾ 2루타";
+distance=140;
+combo=0;
+}
+else{
+result="❌ 실패";
+combo=0;
+}
+
+/* bonus */
+let bonus=1;
+if(combo>=2){
+bonus=1+((combo-1)*0.1);
+}
+
+/* fastball */
+if(isFastball){
+bonus*=2;
+
+document.getElementById("fastFx").style.display="block";
+setTimeout(()=>document.getElementById("fastFx").style.display="none",600);
+}
+
+distance=Math.round(distance*bonus);
+
+/* UI */
+document.getElementById("result").innerText=result+" + "+distance+"m";
+document.getElementById("combo").innerText="🔥 COMBO "+combo;
+document.getElementById("comboBonusText").innerText=
+combo>=2 ? "콤보 +" + ((combo-1)*10) + "%" : "없음";
+
+}
+
+/* ================= HOME RUN FX (카메라 + 하늘 솟구침) ================= */
+function homeFly(){
+
+let field=document.getElementById("field");
+let ball=document.getElementById("ball");
+
+/* 🎥 줌 + 카메라 */
+field.style.transition="0.2s";
+field.style.transform="scale(1.35) translateY(-30px)";
+field.style.filter="brightness(1.6)";
+
+/* ⚾ 타격 순간 확대 */
+ball.style.transition="0.1s";
+ball.style.transform="translateX(-50%) scale(3)";
+
+/* 🚀 외야 하늘로 솟구침 */
+setTimeout(()=>{
+
+ball.style.transition="1.3s cubic-bezier(.15,.8,.2,1)";
+ball.style.left="140%";
+ball.style.top="-70%";
+ball.style.opacity="0";
+ball.style.transform="translateX(-50%) scale(0.2)";
+
+},120);
+
+/* ✨ 클론 공 (강조) */
+let fx = ball.cloneNode(true);
+fx.style.position="absolute";
+fx.style.left="50%";
+fx.style.top="40%";
+fx.style.width="18px";
+fx.style.height="18px";
+fx.style.zIndex="999";
+document.body.appendChild(fx);
+
+setTimeout(()=>{
+
+fx.style.transition="1.5s ease-out";
+fx.style.left="170%";
+fx.style.top="-110%";
+fx.style.opacity="0";
+fx.style.transform="scale(0.05)";
+
+},150);
+
+/* 🔄 복구 */
+setTimeout(()=>{
+
+field.style.transform="scale(1)";
+field.style.filter="brightness(1)";
+
+ball.style.transition="0s";
+ball.style.left="50%";
+ball.style.top="0";
+ball.style.opacity="1";
+ball.style.transform="translateX(-50%) scale(1)";
+
+fx.remove();
+
+},1500);
+
+/* 💥 shake */
+field.classList.add("shake");
+setTimeout(()=>field.classList.remove("shake"),300);
+
+/* ⚡ flash */
+document.body.style.filter="brightness(2)";
+setTimeout(()=>document.body.style.filter="brightness(1)",120);
+
+}
+
+</script>
+
+</body>
+</html>
